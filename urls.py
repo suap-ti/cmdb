@@ -5,9 +5,11 @@ from django.urls import path, include
 from django.views.generic.base import RedirectView
 from django.contrib.auth import views as auth_views
 from rest_framework import urls, schemas
+from cmdb.views import index
 
 
 urlpatterns = [
+    path('sti/', RedirectView.as_view(url=settings.URL_PATH_PREFIX)),
     path(
         settings.URL_PATH_PREFIX[1:],
         include(
@@ -15,7 +17,7 @@ urlpatterns = [
                 path('oauth/', include('social_django.urls', namespace='social')),
                 path('admin/login/', RedirectView.as_view(url=settings.URL_PATH_PREFIX + 'oauth/login/suap/')),
                 path('admin/', admin.site.urls),
-                path('', RedirectView.as_view(url='admin')),
+                path('', index),
             ]
         )
     ),
