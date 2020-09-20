@@ -1,8 +1,10 @@
 from django.utils.translation import gettext as _
 from django.contrib.admin import register, ModelAdmin, TabularInline, StackedInline
+from .models import Usuario
 from .models import Service, OperationSystemFamily, OperationSystem, OperationSystemVersion, AssetKind
 from .models import Machine, ExecutedCommands, ConfiguredAsset, Credential, Storage, NetworkInterface
 from tabbed_admin import TabbedModelAdmin
+
 
 @register(Service)
 class ServiceAdmin(ModelAdmin):
@@ -98,3 +100,20 @@ class MachineAdmin(TabbedModelAdmin):
         ( _('Comments'), ((None, { 'fields': ('comments', ) }),) ),
     ]
 
+@register(Usuario)
+class UsuarioAdmin(TabbedModelAdmin):
+    list_display = ('username', 'name', 'email', 'campus', 'grupos',)
+    list_filter = ('is_staff', 'is_superuser', 'is_active', 'campus', 'groups',) 
+    search_fields = ('username', 'name', 'email')
+    ordering = ('name',)
+
+    readonly_fields = ['created_at', 'changed_at', ]
+    tabs = [
+        (None, ((None, {'fields': [('username', 'campus'), ('name', 'social_name'), ('created_at', 'changed_at',),]}),) ),
+        (_('E-Mails'), ((None, {'fields': ['email', 'academic_email', 'scholar_email',]}),) ),
+        ( _('Permissions'), ((None, {'fields': ['is_active', 'is_staff', 'is_superuser', 'groups',]}),) ),
+    ]
+
+    def grupos(self, instance):
+        result = ', '.join([x.name for x in instance.groups.all()])
+        return f'{result}'
