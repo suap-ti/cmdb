@@ -1,0 +1,14 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">{% translate 'Home' %}</a></div>{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+
+{% block content %}
+
+<p>Você só sairá completamente do sistema se você também <a href="https://suap.ifrn.edu.br/accounts/logout/">sair do SUAP</a></p>
+
+<p>Você será conectado novamente simplesmente <a href="{% url 'admin:index' %}">clicando aqui</a>.</p>
+
+{% endblock %}
