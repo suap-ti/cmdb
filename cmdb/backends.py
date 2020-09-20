@@ -1,6 +1,5 @@
 from social_core.backends.oauth import BaseOAuth2
 
-
 class SuapOAuth2(BaseOAuth2):
     name = 'suap'
     AUTHORIZATION_URL = 'https://suap.ifrn.edu.br/o/authorize/'
@@ -31,9 +30,14 @@ class SuapOAuth2(BaseOAuth2):
         first_name, last_name = splitted_name[0], ''
         if len(splitted_name) > 1:
             last_name = splitted_name[-1]
+        # social_name = CharField(_('social name'), max_length=255, null=True, blank=True)
         return {
             'username': response[self.ID_KEY],
+            'name': response['nome'].strip(),
             'first_name': first_name.strip(),
             'last_name': last_name.strip(),
             'email': response['email'],
+            'scholar_email': response['email_google_classroom'],
+            'academic_email': response['email_academico'],
+            'campus': response['campus'],
         }
