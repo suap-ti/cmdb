@@ -1,7 +1,40 @@
+from django.conf import settings
+from django.dispatch import receiver
 from django.utils.translation import gettext as _
+from django.db.models.signals import post_save
 from django.db.models import Model, TextChoices
-from django.db.models import CharField, PositiveIntegerField, TextField, DateField, URLField
+from django.db.models import CharField, PositiveIntegerField, TextField, DateField, URLField, EmailField, BooleanField, DateTimeField
 from django.db.models import ForeignKey, CASCADE, PROTECT, RESTRICT, SET, SET_NULL, SET_DEFAULT, DO_NOTHING
+from django.contrib.auth.models import AbstractUser
+
+
+# class User(AbstractUser):
+class Usuario(AbstractUser):
+    username = CharField(_('username'), max_length=150, unique=True)
+    password = CharField(_('password'), max_length=128, null=True, blank=True)
+    name = CharField(_('name'), max_length=255, null=True, blank=True)
+    social_name = CharField(_('social name'), max_length=255, null=True, blank=True)
+    email = EmailField(_('email address'), null=True, blank=True)
+    scholar_email = EmailField(_('scholar email address'), null=True, blank=True)
+    academic_email = EmailField(_('academic email address'), null=True, blank=True)
+    campus = CharField(_('campus'), max_length=255, null=True, blank=True)
+    is_staff = BooleanField(_('staff status'), default=False, help_text=_('Designates whether the user can log into this admin site.'),)
+    is_active = BooleanField(_('active'), default=True, help_text=_( 'Designates whether this user should be treated as active. ' 'Unselect this instead of deleting accounts.'),)
+    created_at = DateTimeField(_('date created'), auto_now_add=True)
+    changed_at = DateTimeField(_('date changed'), auto_now=True)
+
+    EMAIL_FIELD = 'email'
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email', 'name']
+
+    class Meta:
+        verbose_name = _('User')
+        verbose_name_plural = _('Users')
+        ordering = ['name']
+
+    def __str__(self):
+        return f'{self.name}' 
+    pass
 
 
 class StringField(CharField):
@@ -197,3 +230,8 @@ class NetworkInterface(Model):
     def __str__(self):
         return "%s: %s/%s" % (self.purpose, self.ipv4_address, self.ipv4_mask)
 
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_socialauth_suap_user(sender, instance=None, created=False, **kwargs):
+    from social_django.models import UserSocialAuth
+    UserSocialAuth.objects.update_or_create(user=instance, defaults={'provider': 'suap', 'uid': instance.username})
