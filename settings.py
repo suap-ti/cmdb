@@ -141,17 +141,12 @@ SESSION_SERIALIZER = env("DJANGO_SESSION_SERIALIZER", 'django.contrib.sessions.s
 
 # Auth and Security... some another points impact on security, take care!
 SECRET_KEY = env("DJANGO_SECRET_KEY", 'changeme')
-AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
-]
+AUTH_PASSWORD_VALIDATORS = []
 AUTHENTICATION_BACKENDS = ('cmdb.backends.SuapOAuth2',)
 SOCIAL_AUTH_SUAP_KEY = env('SOCIAL_AUTH_SUAP_KEY', 'changeme')
 SOCIAL_AUTH_SUAP_SECRET = env('SOCIAL_AUTH_SUAP_SECRET', 'changeme')
 LOGIN_URL = env('DJANGO_LOGIN_URL', URL_PATH_PREFIX + 'oauth/login/suap/')
 LOGIN_REDIRECT_URL = env('DJANGO_LOGIN_REDIRECT_URL', URL_PATH_PREFIX)
-LOGOUT_URL = env('DJANGO_LOGOUT_URL', URL_PATH_PREFIX + 'logout/')
-LOGOUT_REDIRECT_URL = env("DJANGO_LOGOUT_REDIRECT_URL", LOGIN_REDIRECT_URL)
-AUTH_USER_MODEL = env("DJANGO_AUTH_USER_MODEL", 'auth.User')
+# LOGOUT_URL = env('DJANGO_LOGOUT_URL', URL_PATH_PREFIX + 'logout/')
+# LOGOUT_REDIRECT_URL = env("DJANGO_LOGOUT_REDIRECT_URL", LOGIN_REDIRECT_URL)
+AUTH_USER_MODEL = 'cmdb.Usuario'
