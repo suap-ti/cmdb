@@ -51,7 +51,7 @@ class ServiceAdmin(TabbedModelAdmin):
     list_filter = ['service_group']
     autocomplete_fields = ['contacts']
     tabs = [
-        ( _('Identification'), ((None, {'fields': ['name', 'contacts', 'comments',]}),) ),
+        ( _('Identification'), ((None, {'fields': ['service_group', 'name', 'contacts', 'comments',]}),) ),
         ( _('Visual test'), (VisualTestInline,) ),
         ( _('Automated test'), (AutomatedTestInline,) ),
     ]
