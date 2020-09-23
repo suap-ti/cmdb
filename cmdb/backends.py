@@ -1,4 +1,5 @@
 from social_core.backends.oauth import BaseOAuth2
+from .models import Usuario
 
 class SuapOAuth2(BaseOAuth2):
     name = 'suap'
@@ -30,6 +31,9 @@ class SuapOAuth2(BaseOAuth2):
         first_name, last_name = splitted_name[0], ''
         if len(splitted_name) > 1:
             last_name = splitted_name[-1]
+        found = Usuario.objects.filter(username=response[self.ID_KEY]).first()
+        if found is None:
+            raise Exception("Usuário não cadastrado.")
         # social_name = CharField(_('social name'), max_length=255, null=True, blank=True)
         return {
             'username': response[self.ID_KEY],
