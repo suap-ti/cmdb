@@ -17,6 +17,7 @@ urlpatterns = [
                 path('oauth/', include('social_django.urls', namespace='social')),
                 path('admin/login/', RedirectView.as_view(url=settings.URL_PATH_PREFIX + 'oauth/login/suap/')),
                 path('admin/', admin.site.urls),
+                path('markdownx/', include('markdownx.urls')),
                 path('', index),
             ]
         )

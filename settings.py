@@ -5,7 +5,7 @@ DEBUG = env_as_bool("DJANGO_DEBUG", False)
 
 # Apps
 MY_APPS = env_as_list('MY_APPS', 'cmdb')
-THIRD_APPS = env_as_list('THIRD_APPS', 'social_django,tabbed_admin')
+THIRD_APPS = env_as_list('THIRD_APPS', 'social_django,tabbed_admin,markdownx')
 DJANGO_APPS = env_as_list('DJANGO_APPS', 'django.contrib.admin,'
                                          'django.contrib.auth,'
                                          'django.contrib.contenttypes,'
@@ -38,6 +38,8 @@ STATIC_URL = env('DJANGO_STATIC_URL', URL_PATH_PREFIX + 'static/')
 STATIC_ROOT = env('DJANGO_STATIC_ROOT', "/static" + URL_PATH_PREFIX)
 MEDIA_URL = env('DJANGO_MEDIA_URL', URL_PATH_PREFIX + 'media/')
 MEDIA_ROOT = env('DJANGO_MEDIA_ROOT', '/media' + URL_PATH_PREFIX)
+MARKDOWNX_URLS_PATH = env('MARKDOWNX_URLS_PATH', URL_PATH_PREFIX + 'markdownx/markdownify/')
+MARKDOWNX_UPLOAD_URLS_PATH = env('MARKDOWNX_UPLOAD_URLS_PATH', URL_PATH_PREFIX + 'markdownx/upload/')
 
 # Template engine
 TEMPLATES = [
