@@ -87,7 +87,7 @@ class AssetKindAdmin(ModelAdmin):
 class ExecutedCommandsInline(StackedInline):
     model = ExecutedCommands
     fields = ['date', 'commands']
-    ordering = ['date']
+    ordering = ['date', 'id']
     extra = 0
     formfield_overrides = {TextField: {'widget': Textarea(attrs={'class': "vLargeTextField", 'style':"font-family: monospace; background: #333; color: lime;"})}}
     # cols="40" rows="10" style="background: red;" id="id_executedcommands_set-0-commands"
