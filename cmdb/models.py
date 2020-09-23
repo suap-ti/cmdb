@@ -3,9 +3,13 @@ from django.dispatch import receiver
 from django.utils.translation import gettext as _
 from django.db.models.signals import post_save
 from django.db.models import Model, TextChoices
-from django.db.models import CharField, PositiveIntegerField, TextField, DateField, URLField, EmailField, BooleanField, DateTimeField
-from django.db.models import ForeignKey, CASCADE, PROTECT, RESTRICT, SET, SET_NULL, SET_DEFAULT, DO_NOTHING
+from django.db.models import CharField, TextField, DateField, BooleanField, DateTimeField
+from django.db.models import PositiveIntegerField, PositiveSmallIntegerField
+from django.db.models import URLField, EmailField, IPAddressField, GenericIPAddressField, ImageField
+from django.db.models import ForeignKey, CASCADE, PROTECT, RESTRICT, SET, SET_NULL, SET_DEFAULT, DO_NOTHING, ManyToManyField
 from django.contrib.auth.models import AbstractUser
+from markdownx.models import MarkdownxField
+from .fields import StringField, NullStringField, FK, NullFK
 
 
 # class User(AbstractUser):
@@ -37,34 +41,63 @@ class Usuario(AbstractUser):
     pass
 
 
-class StringField(CharField):
-    def __init__(self, verbose_name, max_length=250, *args, **kwargs):
-        super().__init__(verbose_name=verbose_name, max_length=max_length, *args, **kwargs)
+class Contact(Model):
+    class Kind(TextChoices):
+        MANAGER = 'Manager', _('Manager')
+        TECHNICIAN = 'Technician', _('Technician')
+        CLIENT = 'Client', _('Client')
+        KEY_USER = 'Key user', _('Key user')
+
+    kind = StringField(_("Kind"), choices=Kind.choices, default=Kind.MANAGER,)
+    name = CharField('Nome', max_length=250)
+    comments = MarkdownxField(_('Comments'), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _('Contact')
+        verbose_name_plural = _('Contacts')
+
+    def __str__(self):
+        return f"{self.name} ({self.kind})"
 
 
-class NullStringField(StringField):
-    def __init__(self, verbose_name, max_length=250, null=True, blank=True, *args, **kwargs):
-        super().__init__(verbose_name=verbose_name, max_length=max_length, null=True, blank=True, *args, **kwargs)
+class Channel(Model):
+    class Kind(TextChoices):
+        PERSONAL_EMAIL = 'Personal e-Mail', _('Personal e-Mail')
+        ENTERPRISE_EMAIL = 'Enterprise e-Mail', _('Enterprise e-Mail')
+        WHATSAPP = 'WhatsApp', _('WhatsApp')
+        PERSONAL_PHONE = 'Personal phone', _('Personal phone')
+        ENTERPRISE_PHONE = 'Enterprise phone', _('Enterprise phone')
+
+    Contact = ForeignKey(_('Contact'), Contact)
+    kind = StringField(_("Kind"), choices=Kind.choices, default=Kind.ENTERPRISE_EMAIL,)
+    content = StringField(_('Content'), max_length=250)
+    comments = MarkdownxField(_('Comments'), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _('Channel')
+        verbose_name_plural = _('Channels')
+
+    def __str__(self):
+        return f"{self.kind} - {self.content}"
 
 
-class FK(ForeignKey):
-    def __init__(self, verbose_name, to, on_delete=CASCADE, 
-                 related_name=None, related_query_name=None, limit_choices_to=None, 
-                 parent_link=False, to_field=None, db_constraint=True, **kwargs):
-        super().__init__(to, on_delete, related_name, related_query_name, 
-                         limit_choices_to, parent_link, to_field, db_constraint, verbose_name=verbose_name, **kwargs)
+class ServiceGroup(Model):
+    name = StringField(_("Name"))
+    comments = MarkdownxField(_("Comments"), null=True, blank=True)
 
+    class Meta:
+        verbose_name = _('Service group')
+        verbose_name_plural = _('Services groups')
 
-class NullFK(ForeignKey):
-    def __init__(self, verbose_name, to, on_delete=CASCADE,  
-                 related_name=None, related_query_name=None, limit_choices_to=None, 
-                 parent_link=False, to_field=None, db_constraint=True, null=True, blank=True,**kwargs):
-        super().__init__(to, on_delete, related_name, related_query_name, 
-                         limit_choices_to, parent_link, to_field, db_constraint, verbose_name=verbose_name, null=null, blank=blank, **kwargs)
+    def __str__(self):
+        return "%s" % self.name
 
 
 class Service(Model):
     name = StringField(_("Name"))
+    service_group = FK(_("Service group"), ServiceGroup)
+    contacts = ManyToManyField(Contact)
+    comments = MarkdownxField(_('Comments'), null=True, blank=True)
 
     class Meta:
         verbose_name = _('Service')
@@ -73,6 +106,39 @@ class Service(Model):
     def __str__(self):
         return "%s" % self.name
 
+        
+class VisualTest(Model):
+    service = FK(_('Service'), Service)
+    name = StringField(_('Name'))
+    url = URLField(_('URL'))
+    screenshot = ImageField(_('Screenshot'), upload_to='visual')
+    order = PositiveSmallIntegerField(_('Order'), default=1)
+    how_to_test = MarkdownxField('How to test', null=False, blank=False)
+
+    class Meta:
+        verbose_name = _('Visual test')
+        verbose_name_plural = _('Visual tests')
+
+    def __str__(self):
+        return self.name
+
+
+class AutomatedTest(Model):
+    service = FK(_('Service'), Service)
+    url = URLField(_('URL'))
+    http_code = PositiveSmallIntegerField(_('HTTP Code'), default=200)
+    regex = CharField(_('RegEx'), max_length=250, null=True, blank=True)
+    timeout = PositiveSmallIntegerField(_('Timeout (s)'))
+    interval = PositiveSmallIntegerField(_('Intervalo (m)'))
+    order = PositiveSmallIntegerField(_('Order'), default=1)
+    comments = MarkdownxField(_('Comments'), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _('Automated test')
+        verbose_name_plural = _('Automated tests')
+
+    def __str__(self):
+        return self.url
 
 class OperationSystemFamily(Model):
     name = StringField(_("Name"))
@@ -112,6 +178,7 @@ class OperationSystemVersion(Model):
 
 class AssetKind(Model):
     name = StringField(_("Name"))
+    comments = MarkdownxField(_("Comments"), null=True, blank=True)
 
     class Meta:
         verbose_name = _('Asset kind')
@@ -128,7 +195,7 @@ class Machine(Model):
 
     kind = StringField(_("Kind"), choices=Kind.choices, default=Kind.VIRTUAL,)
     name = StringField(_("Name"))
-    url = URLField(_("URL"))
+    url = URLField(_("URL"), null=True, blank=True)
     serial = NullStringField(_("Service tag or serial"))
     license = NullStringField(_("Key or license"))
     patrimony = NullStringField(_("Patrimony ID"))
@@ -138,7 +205,7 @@ class Machine(Model):
     physical_machine = NullFK(_("Physical machine"), 'Machine')
     operation_system_version = FK(_("Operation system version"), OperationSystemVersion)
     last_operation_system_upgrade = DateField(_("Last operation system upgrade"), null=True, blank=True)
-    comments = TextField(_("Comments"), null=True, blank=True)
+    comments = MarkdownxField(_("Comments"), null=True, blank=True)
 
     class Meta:
         verbose_name = _('Machine')
@@ -150,6 +217,7 @@ class Machine(Model):
 
 class ExecutedCommands(Model):
     machine = NullFK(_("Machine"), Machine)
+    subject = StringField(_("Subject"))
     commands = TextField(_("Commands"))
     date = DateField(_("Date"))
 
@@ -164,7 +232,7 @@ class ExecutedCommands(Model):
 class ConfiguredAsset(Model):
     machine = FK(_("Machine"), Machine)
     asset = FK(_("Asset"), AssetKind)
-    comments = TextField(_("Comments"), null=True, blank=True)
+    comments = MarkdownxField(_("Comments"), null=True, blank=True)
 
     class Meta:
         verbose_name = _('Configured asset')
@@ -200,6 +268,7 @@ class Storage(Model):
     machine = FK(_("Machine"), Machine)
     kind = StringField(_("Kind"), choices=Kind.choices, default=Kind.VHD,)
     capacity = PositiveIntegerField(_("Capacity (in GB)"))
+    mount_point = StringField(_("Mount point"))
 
     class Meta:
         verbose_name = _('Storage')
@@ -214,9 +283,9 @@ class NetworkInterface(Model):
     purpose = NullStringField(_("Purpose"))
     interface_name = NullStringField(_("Interface name"))
     interface_number = PositiveIntegerField(_("Interface number"), null=True, blank=True)
-    ipv4_address = NullStringField(_("IPv4 address"))
+    ipv4_address = GenericIPAddressField(_("IPv4 address"), protocol='IPv4', null=True, blank=True)
     ipv4_mask = NullStringField(_("IPv4 mask"))
-    ipv6_address = NullStringField(_("IPv6 address"))
+    ipv6_address = GenericIPAddressField(_("IPv6 address"), protocol='IPv6', null=True, blank=True)
     switch_port = NullStringField(_("Switch port"))
     pvid = NullStringField(_("PVID"))
     untag = NullStringField(_("Untag"))

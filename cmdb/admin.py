@@ -1,15 +1,60 @@
 from django.utils.translation import gettext as _
+from django.db.models import TextField
+from django.forms.widgets import Textarea
 from django.contrib.admin import register, ModelAdmin, TabularInline, StackedInline
-from .models import Usuario
-from .models import Service, OperationSystemFamily, OperationSystem, OperationSystemVersion, AssetKind
-from .models import Machine, ExecutedCommands, ConfiguredAsset, Credential, Storage, NetworkInterface
 from tabbed_admin import TabbedModelAdmin
+from markdownx.models import MarkdownxField
+from markdownx.widgets import MarkdownxWidget
+from .models import Usuario
+from .models import Contact, Channel, ServiceGroup, Service, VisualTest, AutomatedTest
+from .models import OperationSystemFamily, OperationSystem, OperationSystemVersion, AssetKind
+from .models import Machine, ExecutedCommands, ConfiguredAsset, Credential, Storage, NetworkInterface
+
+
+class ChannelInline(TabularInline):
+    model = Channel
+    fields = ['kind', 'content', 'comments']
+    extra = 0
+
+
+@register(Contact)
+class ContactAdmin(ModelAdmin):
+    list_display = ['name']
+    search_fields = ['name', 'comments']
+    inlines = [ChannelInline]
+   
+
+@register(ServiceGroup)
+class ServiceGroupAdmin(ModelAdmin):
+    list_display = ['name']
+    search_fields = ['name', 'comments']
+
+
+class VisualTestInline(StackedInline):
+    model = VisualTest
+    fields = ['order', 'name', 'url', 'screenshot', 'how_to_test']
+    ordering = ['order']
+    extra = 0
+
+
+class AutomatedTestInline(StackedInline):
+    model = AutomatedTest
+    fields = ['order', 'url', 'http_code', 'regex', 'timeout', 'interval', 'comments']
+    ordering = ['order']
+    extra = 0
 
 
 @register(Service)
-class ServiceAdmin(ModelAdmin):
-    list_display = ['name']
-    search_fields = ['name']
+class ServiceAdmin(TabbedModelAdmin):
+    list_display = ['name', 'service_group']
+    search_fields = ['name', 'comments']
+    list_filter = ['service_group']
+    autocomplete_fields = ['contacts']
+    tabs = [
+        ( _('Identification'), ((None, {'fields': ['name', 'contacts', 'comments',]}),) ),
+        ( _('Visual test'), (VisualTestInline,) ),
+        ( _('Automated test'), (AutomatedTestInline,) ),
+    ]
 
 
 @register(OperationSystemFamily)
@@ -44,6 +89,10 @@ class ExecutedCommandsInline(StackedInline):
     fields = ['date', 'commands']
     ordering = ['date']
     extra = 0
+    formfield_overrides = {TextField: {'widget': Textarea(attrs={'class': "vLargeTextField", 'style':"font-family: monospace; background: #333; color: lime;"})}}
+    # cols="40" rows="10" style="background: red;" id="id_executedcommands_set-0-commands"
+    # cols="40" rows="10" class="vLargeTextField" id="id_executedcommands_set-0-commands"
+
 
 
 class ConfiguredAssetInline(TabularInline):
@@ -62,7 +111,7 @@ class CredentialInline(TabularInline):
 
 class StorageInline(TabularInline):
     model = Storage
-    fields = ['kind', 'capacity']
+    fields = ['kind', 'capacity', 'mount_point']
     ordering = ['kind', 'capacity']
     extra = 0
 
@@ -79,26 +128,37 @@ class MachineAdmin(TabbedModelAdmin):
     search_fields = ['name', 'url', 'patrimony', 'purpose', 'comments']
     list_filter = ['kind', 'physical_machine', 'operation_system_version']
     date_hierarchy = 'last_operation_system_upgrade'
-
-    tab_overview = (
-        (None, {'fields': (
-                ('kind', 'operation_system_version', 'last_operation_system_upgrade', ), 
-                ('name', 'physical_machine',), 
-                ('purpose', 'url'), 
-                ('cpu', 'ram'), 
-            )}),
-        StorageInline
-    )
-
     tabs = [
-        ( _('Overview'), tab_overview ),
-        ( _('Licenses'), ((None, {'fields': ('serial', 'license', 'patrimony')}),) ),
+        ( 
+            _('Overview'),
+            ( 
+                (
+                    None,
+                    {'fields':
+                        (
+                            ('kind', 'operation_system_version', 'last_operation_system_upgrade', ), 
+                            ('name', 'physical_machine',), 
+                            ('purpose', 'url'), 
+                            ('cpu', 'ram'), 
+                        )
+                    }
+                ),
+                StorageInline
+            )
+        ),
         ( _('Network'), (NetworkInterfaceInline,) ),
         ( _('Credentials'), (CredentialInline,) ),
         ( _('Assets'), (ConfiguredAssetInline,) ),
         ( _('Commands'), (ExecutedCommandsInline,) ),
+        ( _('Licenses'), ((None, {'fields': ('serial', 'license', 'patrimony')}),) ),
         ( _('Comments'), ((None, { 'fields': ('comments', ) }),) ),
     ]
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "physical_machine":
+            kwargs["queryset"] = Machine.objects.filter(kind=Machine.Kind.PHYSICAL)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 @register(Usuario)
 class UsuarioAdmin(TabbedModelAdmin):
